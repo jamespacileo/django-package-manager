@@ -1,0 +1,1 @@
+from django_package_manager.package_manager import PackageManager
