@@ -105,7 +105,7 @@ def puts_header(text, color='green', minimal=True ):
 
 def puts_key_value(key, value):
     key_column = [key+':', 20]
-    value_column = [value, 60]
+    value_column = [value, 80]
     puts(columns(key_column, value_column) )
 
 def adapt_text_to_column(text, size=10):

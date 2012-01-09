@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, F
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.schema import Table
 
 from django_package_manager.pip_bootstrap import PIPBootstrap
 
@@ -20,9 +21,14 @@ engine = create_engine(sqlite_connection_string, echo=False)
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 
+association_table = Table('association', Base.metadata,
+    Column('category_id', Integer, ForeignKey('categories.id')),
+    Column('package_id', Integer, ForeignKey('packages.id'))
+)
+
 class Category(Base):
     __tablename__ = 'categories'
-    objects = sessionmaker(bind=engine)
+    #objects = sessionmaker(bind=engine)
 
     id = Column(Integer, primary_key=True)
 
@@ -35,13 +41,15 @@ class Category(Base):
 
 class Package(Base):
     __tablename__ = 'packages'
-    objects = sessionmaker(bind=engine)
+    #objects = sessionmaker(bind=engine)
 
     id = Column(Integer, primary_key=True)
     #created = Column(DateTime)
 
-    category_id = Column(Integer, ForeignKey('categories.id'))
-    category = relationship("Category", backref=backref('packages', order_by=id))
+    categories = relationship('Category', secondary=association_table, backref='packages')
+
+    #category_id = Column(Integer, ForeignKey('categories.id'))
+    #category = relationship("Category", backref=backref('packages', order_by=id))
 
     title = Column(String)
     slug = Column(String)

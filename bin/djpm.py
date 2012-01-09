@@ -10,7 +10,7 @@ from django_package_manager import PackageManager
 
 if __name__=="__main__":
 
-    pm = PackageManager()
+
 
 
     #with indent(4, quote='>>>'):
@@ -21,6 +21,14 @@ if __name__=="__main__":
     #    puts(colored.red('Grouped Arguments: ') + str(dict(args.grouped)))
 
     grouped_args = dict(args.grouped)
+
+    proxy = None
+    if grouped_args.has_key('--proxy'):
+        proxy = grouped_args['--proxy'][0]
+
+
+    pm = PackageManager(proxy=proxy)
+
     if grouped_args['_'][0] == 'update':
         pm.update()
     elif grouped_args['_'][0] == 'list':
