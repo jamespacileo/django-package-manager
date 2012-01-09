@@ -127,8 +127,9 @@ class PackageManager(object):
             if key == 'q':
                 quit()
 
-            if key == 'n':
-                if view == 'main-view':
+            if view == 'main-view':
+                if   key == 'n':
+                    # N = Next page
                     if current_page >= paginator.num_pages:
                         puts_err("You are already at the last page")
                         continue
@@ -136,8 +137,8 @@ class PackageManager(object):
                     current_page += 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'p':
-                if view == 'main-view':
+                elif key == 'p':
+                    # P = Previous page
                     if current_page <= 1:
                         puts_err("You are already at the first page")
                         continue
@@ -145,35 +146,48 @@ class PackageManager(object):
                     current_page -= 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'u':
-                # order by using
-                if view == 'main-view':
+                elif key == 'u':
+                    # SORT BY USING
                     paginator.query = session.query(Package).order_by(Package.usage_count.desc())
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'w':
-                # order by watching
-                if view == 'main-view':
+                elif key == 'i':
+                    pass
+
+                elif key == 'w':
+                    # SORT BY WATCHING
                     paginator.query = session.query(Package).order_by(Package.repo_watchers.desc())
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'd':
-                # order by downloads
-                if view == 'main-view':
+                elif key == 'd':
+                    # SORT by Downloads
                     paginator.query = session.query(Package).order_by(Package.pypi_downloads.desc())
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'c':
-                # change category
-                if view == 'main-view':
-                    view = 'change-category'
+                elif ord(key) == 13:
+                    # Pressed ENTER onto package
+                    view = 'package-view'
+                    package = paginator.current_page()[highlighted_item-1]
+                    self._render_package_info(package)
 
+                elif ord(key) == 72:
+                    # pressed UP
+                    if not highlighted_item <= 1:
+                        highlighted_item -= 1
+                    self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            if key == 'i':
-                if view == 'package-view':
+                elif ord(key) == 80:
+                    # pressed DOWN
+                    if not highlighted_item >= 10:
+                        highlighted_item += 1
+                    self._render_package_list(paginator, current_page, info, highlighted_item)
+
+            elif view == 'package-view':
+
+                if key == 'i':
                     view = "install-view"
 
                     self._clear_screen()
@@ -195,8 +209,7 @@ class PackageManager(object):
                     self._render_package_info(package)
                     view = 'package-view'
 
-            if key == 'u':
-                if view == 'package-view':
+                elif key == 'u':
                     view = "install-view"
 
                     self._clear_screen()
@@ -221,32 +234,13 @@ class PackageManager(object):
                     self._render_package_info(package)
                     view = 'package-view'
 
-            if ord(key) == 13:
-                # pressed ENTER
-                if view == 'main-view':
-                    view = 'package-view'
-                    package = paginator.current_page()[highlighted_item-1]
-                    self._render_package_info(package)
-
-            if ord(key) == 72:
-                # pressed UP
-                if view == 'main-view':
-                    if not highlighted_item <= 1:
-                        highlighted_item -= 1
-                    self._render_package_list(paginator, current_page, info, highlighted_item)
-
-            if ord(key) == 80:
-                # pressed DOWN
-                if view == 'main-view':
-                    if not highlighted_item >= 10:
-                        highlighted_item += 1
-                    self._render_package_list(paginator, current_page, info, highlighted_item)
-
-            if ord(key) == 8:
-                # backspace
-                if view == 'package-view':
+                elif ord(key) == 8:
                     view = 'main-view'
                     self._render_package_list(paginator, current_page, info, highlighted_item)
+
+            elif view == 'installed-view':
+                pass
+
 
     def _check_installed(self):
         pip_bootstrap = PIPBootstrap()
