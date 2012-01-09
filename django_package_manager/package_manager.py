@@ -10,7 +10,15 @@ from django_package_manager.pip_bootstrap import PIPBootstrap
 from django_package_manager.models import create_tables, Category, Package, Session
 from django_package_manager.cli_utils import puts_header, puts_key_value, puts_package_list, listen_for_cli_command, Paginator
 
-PACKAGE_FIELDS = [#'grids',
+PACKAGE_FIELDS = [
+                  'id',
+                  'title',
+                  'slug',
+                  'description',
+                  'absolute_url',
+                  'resource_uri']
+
+CATEGORY_FIELDS = [#'grids',
                   'repo_watchers',
                   'id',
                   #'category',
@@ -54,6 +62,14 @@ class PackageManager(object):
             session.add(package_model)
         session.commit()
         print "Packages updated"
+
+        categories = dp_bootstrap.grid_list()
+        for category in categories:
+            filtered_args = [(key,val) for key,val in category.items() if key in CATEGORY_FIELDS]
+            category_model = Category(**dict(filtered_args))
+            session.add(category_model)
+        session.commit()
+        print "Categories updated"
 
     def search(self, text):
         pass
@@ -107,6 +123,7 @@ class PackageManager(object):
 
         while True:
             key = listen_for_cli_command()
+
             if key == 'q':
                 quit()
 
@@ -151,20 +168,23 @@ class PackageManager(object):
 
             if key == 'c':
                 # change category
-                pass
+                if view == 'main-view':
+                    view = 'change-category'
+
 
             if key == 'i':
                 if view == 'package-view':
                     view = "install-view"
 
-                    os.system("cls")
+                    self._clear_screen()
+
                     puts(colored.magenta("Installing..."))
                     puts()
 
                     package = paginator.current_page()[highlighted_item-1]
                     result = self.install(package_names=[package.install_string])
                     if not result:
-                        package.installed = True
+                        package.update_installed_info()
                         session.commit()
 
                     paginator.refresh_objects()
@@ -179,7 +199,8 @@ class PackageManager(object):
                 if view == 'package-view':
                     view = "install-view"
 
-                    os.system("cls")
+                    self._clear_screen()
+
                     puts(colored.magenta("Uninstalling..."))
                     puts()
 
@@ -238,7 +259,7 @@ class PackageManager(object):
         pass
 
     def _render_package_list(self, paginator, current_page, info, highlighted_item):
-        os.system("cls")
+        self._clear_screen()
 
         puts_header("Listing packages")
         for key,val in info.items():
@@ -247,7 +268,8 @@ class PackageManager(object):
         puts_package_list(paginator, current_page, highlighted_item)
 
     def _render_package_info(self, package):
-        os.system("cls")
+        # CLEAR CLI
+        self._clear_screen()
 
         puts_header("Package information")
 
@@ -255,8 +277,8 @@ class PackageManager(object):
         puts_key_value("Latest version", colored.yellow( package.pypi_version))
         puts_key_value("Repo url", colored.yellow( package.repo_url))
         puts_key_value("PYPI url", colored.yellow( package.pypi_url))
-        if package.check_installed:
-            puts_key_value("Installed version", colored.yellow( package.check_installed._version ))
+        if package.installed:
+            puts_key_value("Installed version", colored.yellow( package.installed_version or "N\A" ))
 
         # DESCRIPTION
 
@@ -269,7 +291,7 @@ class PackageManager(object):
         # COMMANDS
         puts("Commands:")
         puts()
-        if not package.check_installed:
+        if not package.installed:
             puts("[i] install")
         else:
             puts("[o] upgrade install")
@@ -280,5 +302,23 @@ class PackageManager(object):
         puts()
         puts("[backspace] return to previous screen")
 
+    def refresh_database(self):
+
+        # check for installed packages, update installed package info
+        session = Session()
+        packages = session.query(Package).order_by(Package.usage_count.desc()).all()
+        for package in packages:
+            package.check_installed()
+        session.commit()
+
+    def update_database(self):
+        # check for document urls !CAN TAKE TIME
+        # check for new packages in database !CAN TAKE TIME
+
+        pass
+
+    def _clear_screen(self):
+        if os.system("cls"): # WINDOWS
+            os.system("clear") # UNIX
 
 

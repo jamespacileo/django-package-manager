@@ -26,7 +26,10 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True)
 
-    name = Column(String)
+    absolute_url = Column(String)
+    resource_uri = Column(String)
+
+    title = Column(String)
     slug = Column(String)
     description = Column(Text)
 
@@ -59,6 +62,9 @@ class Package(Base):
     participants = Column(Text)
 
     installed = Column(Boolean)
+    installed_version = Column(String)
+
+    installed_info = False
 
     @property
     def pypi_package_name(self):
@@ -100,12 +106,23 @@ class Package(Base):
             return parsed_url.path.split('/')[1]
         return ''
 
-    @property
-    def check_installed(self):
+    def update_installed_info(self):
         pip_bootstrap = PIPBootstrap()
-        installed = pip_bootstrap.check_if_installed(self.pypi_package_name or self.repo_name)
-        self.installed = installed and True or False
-        return installed
+        installed_info = pip_bootstrap.check_if_installed(self.pypi_package_name or self.repo_name)
+        self.installed = installed_info and True or False
+        if installed_info:
+            self.installed = True
+            self.installed_version = installed_info._version
+        else:
+            self.installed = False
+            self.installed_version = None
+
+    #@property
+    #def check_installed(self):
+    #    return {
+    #        'installed': True,
+    #        '_version': self.installed_version or '',
+    #    }
 
     @property
     def install_string(self):

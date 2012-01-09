@@ -140,11 +140,16 @@ def puts_package_list(paginator, current_page, highlighted_item):
             if index+1 == highlighted_item:
                 title = " * " + title
 
-            installed_package = package.check_installed
-            if installed_package:
-                title += colored.yellow(" [Installed %s] " %installed_package._version)
-                if versioner(installed_package._version) < versioner(package.pypi_version):
-                    title += colored.red(" [New version %s] " %package.pypi_version)
+
+            if package.installed:
+                if not package.installed_version:
+                    # There is no package version! We can't deduce if a new version is really available.
+                    title += colored.yellow(" [Installed] ")
+                else:
+                    # Package version is there. Everything normal and good!
+                    title += colored.yellow(" [Installed %s] " %package.installed_version)
+                    if versioner(package.installed_version) < versioner(package.pypi_version):
+                        title += colored.red(" [New version %s] " %package.pypi_version)
             puts(title)
 
         info = {
