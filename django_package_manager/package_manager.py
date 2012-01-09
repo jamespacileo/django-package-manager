@@ -1,6 +1,8 @@
 import os
+import webbrowser
 from clint.textui import colored
-from clint.textui.core import puts, puts_err
+from clint.textui.cols import columns
+from clint.textui.core import puts, puts_err, indent
 import time
 
 PACKAGE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -12,7 +14,7 @@ from django_package_manager.cli_utils import puts_header, puts_key_value, puts_p
 
 from sqlalchemy.sql import exists
 
-PACKAGE_FIELDS = [
+CATEGORY_FIELDS = [
                   'id',
                   'title',
                   'slug',
@@ -20,7 +22,7 @@ PACKAGE_FIELDS = [
                   'absolute_url',
                   'resource_uri']
 
-CATEGORY_FIELDS = [#'grids',
+PACKAGE_FIELDS = [#'grids',
                   'repo_watchers',
                   'id',
                   #'category',
@@ -103,15 +105,15 @@ class PackageManager(object):
         pass
 
     def install(self, package_names):
-        pip = PIPBootstrap()
+        pip = PIPBootstrap(proxy=self.proxy)
         result = pip.install(package_names)
 
     def upgrade(self, package_names, from_repository=False):
-        pip = PIPBootstrap()
+        pip = PIPBootstrap(proxy=self.proxy)
         result = pip.upgrade(package_names)
 
     def uninstall(self, package_names):
-        pip = PIPBootstrap()
+        pip = PIPBootstrap(proxy=self.proxy)
         result = pip.uninstall(package_names)
 
     def categories(self, category):
@@ -130,8 +132,13 @@ class PackageManager(object):
         category = "All"
 
         session = Session()
+        self.session = session
 
-        categories = session.query(Category).order_by(Category.title)
+        categories = session.query(Category).order_by(Category.title).all()
+        category_paginator = Paginator(objects=categories, pagination=10)
+        category_current_page = 1
+        category_highlighted_item = 1
+
         if category_name:
             category = session.query(Category).filter(Category.slug == category_name)
             if not category:
@@ -141,7 +148,7 @@ class PackageManager(object):
                 view = 'category-choice-view'
 
 
-        packages_query = session.query(Package).order_by(Package.usage_count.desc())
+        packages_query = session.query(Package).order_by(Package.pypi_downloads.desc())
         packages = packages_query.all()
 
         puts("")
@@ -152,11 +159,14 @@ class PackageManager(object):
         }
 
         paginator = Paginator(packages, pagination=10)
+        paginator.base_query = session.query(Package)
         current_page = 1
         highlighted_item = 1
 
         if view == 'main-view':
             self._render_package_list(paginator, current_page, info, highlighted_item)
+        elif view == 'category-choice-view':
+            self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
 
         while True:
             key = listen_for_cli_command()
@@ -185,12 +195,14 @@ class PackageManager(object):
 
                 elif key == 'u':
                     # SORT BY USING
-                    paginator.query = session.query(Package).order_by(Package.usage_count.desc())
+                    paginator.objects = paginator.base_query.order_by(Package.usage_count.desc()).all()
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-                elif key == 'i':
-                    pass
+                elif key == 'c':
+                    view = "category-choice-view"
+                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+
 
                 elif key == 'g':
                     # UPDATE
@@ -201,13 +213,13 @@ class PackageManager(object):
 
                 elif key == 'w':
                     # SORT BY WATCHING
-                    paginator.query = session.query(Package).order_by(Package.repo_watchers.desc())
+                    paginator.objects = paginator.base_query.order_by(Package.repo_watchers.desc()).all()
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
                 elif key == 'd':
                     # SORT by Downloads
-                    paginator.query = session.query(Package).order_by(Package.pypi_downloads.desc())
+                    paginator.objects = paginator.base_query.order_by(Package.pypi_downloads.desc()).all()
                     current_page = 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
@@ -285,14 +297,68 @@ class PackageManager(object):
                     view = 'main-view'
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
+                elif key == 'p':
+                    # PYPI webpage
+                    package = paginator.current_page()[highlighted_item-1]
+                    webbrowser.open(package.pypi_url)
+
+                elif key == 'r':
+                    # REPO page
+                    package = paginator.current_page()[highlighted_item-1]
+                    webbrowser.open(package.repo_url)
+
             elif view == 'installed-view':
                 pass
 
             elif view == 'category-choice-view':
-                pass
+                if   key == 'n':
+                    # N = Next page
+                    if category_current_page >= category_paginator.num_pages:
+                        puts_err("You are already at the last page")
+                        continue
 
+                    category_current_page += 1
+                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
 
+                elif key == 'p':
+                    # P = Previous page
+                    if category_current_page <= 1:
+                        puts_err("You are already at the first page")
+                        continue
 
+                    category_current_page -= 1
+                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+
+                elif ord(key) == 13:
+                    # Pressed ENTER onto package
+
+                    category = category_paginator.current_page()[category_highlighted_item-1]
+
+                    packages_base_query = session.query(Package).filter(Package.categories.any(id=category.id))
+                    paginator = Paginator(objects=packages_base_query.order_by(Package.pypi_downloads.desc()).all())
+                    paginator.base_query = packages_base_query
+
+                    current_page = 1
+                    highlighted_item = 1
+                    info = {
+                        'Category': category and category.title or 'All',
+                        'Package count': len(category.packages),
+                    }
+                    self._render_package_list(paginator, current_page, info, highlighted_item)
+
+                    view = 'main-view'
+
+                elif ord(key) == 72:
+                    # pressed UP
+                    if not category_highlighted_item <= 1:
+                        category_highlighted_item -= 1
+                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+
+                elif ord(key) == 80:
+                    # pressed DOWN
+                    if not category_highlighted_item >= 10:
+                        category_highlighted_item += 1
+                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
 
     def _check_installed(self):
         pip_bootstrap = PIPBootstrap()
@@ -312,6 +378,44 @@ class PackageManager(object):
             puts_key_value(key, str(val))
 
         puts_package_list(paginator, current_page, highlighted_item)
+
+    def _render_category_choice_view(self, paginator, current_page, highlighted_item):
+        self._clear_screen()
+
+        puts_header("Choose a category")
+
+
+        categories = paginator.page(current_page)
+        starting_index = paginator.pagination*(current_page-1)
+
+        pagination_tpl = "Page %s of %s" %(current_page, paginator.num_pages)
+
+        puts('-'*80, newline=False)
+        puts(pagination_tpl)
+        puts('-'*80)
+
+        for index, category in enumerate(categories):
+
+            quote = "%s)" %str(starting_index+index+1)
+            if index+1 == highlighted_item:
+                quote += " * "
+
+            with indent(indent=6, quote=quote):
+                title = colored.green(category.title)
+
+                #title += "[%s]" %len(category.packages)
+
+                puts(columns([title, 40], [colored.yellow("[%s packages]" %len(category.packages)), 40]))
+
+            with indent(indent=6):
+                puts("%s" %category.description or "")
+
+            puts()
+
+            #with indent(indent=6):
+            #    puts_key_value("Packages", "%s" %len(category.packages))
+                #puts("%s" %category.description)
+
 
     def _render_package_info(self, package):
         # CLEAR CLI
@@ -343,7 +447,7 @@ class PackageManager(object):
             puts("[o] upgrade install")
             puts("[u] uninstall")
         puts()
-        puts("[d] open docs")
+        puts("[p] open pypi page")
         puts("[r] open repository url")
         puts()
         puts("[backspace] return to previous screen")

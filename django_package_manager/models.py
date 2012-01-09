@@ -33,10 +33,10 @@ class Category(Base):
     id = Column(Integer, primary_key=True)
 
     absolute_url = Column(String)
-    resource_uri = Column(String)
+    resource_uri = Column(String, index=True, unique=True)
 
     title = Column(String)
-    slug = Column(String)
+    slug = Column(String, index=True, unique=True)
     description = Column(Text)
 
 class Package(Base):
@@ -52,24 +52,24 @@ class Package(Base):
     #category = relationship("Category", backref=backref('packages', order_by=id))
 
     title = Column(String)
-    slug = Column(String)
+    slug = Column(String, index=True, unique=True)
     description = Column(Text)
 
     absolute_url = Column(String)
-    resource_uri = Column(String)
-    usage_count = Column(Integer)
+    resource_uri = Column(String, index=True, unique=True)
+    usage_count = Column(Integer, index=True)
 
     pypi_url = Column(String)
     pypi_version = Column(Text)
-    pypi_downloads = Column(Integer)
+    pypi_downloads = Column(Integer, index=True)
 
     repo_url = Column(String)
     repo_description = Column(Text)
-    repo_watchers = Column(Integer)
-    repo_forks = Column(Integer)
+    repo_watchers = Column(Integer, index=True)
+    repo_forks = Column(Integer, index=True)
     participants = Column(Text)
 
-    installed = Column(Boolean)
+    installed = Column(Boolean, index=True)
     installed_version = Column(String)
 
     installed_info = False

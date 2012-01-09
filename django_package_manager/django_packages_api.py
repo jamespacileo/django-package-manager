@@ -18,7 +18,7 @@ class DjangoPackagesBootstrap(object):
         url = "http://djangopackages.com/api/v1/grid/?limit=0"
         r = requests.get(url, proxies=self.proxy)
         jdata = json.loads(r.content)
-        return jdata['objects']
+        return filter(lambda x: x['header'], jdata['objects'])
 
     def grid(self, name):
         url = "http://djangopackages.com/api/v1/package/%s/" %name
