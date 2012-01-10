@@ -128,7 +128,7 @@ class PackageManager(object):
         q = quit
 
         """
-        view = "menu-view"
+        self.view = "menu-view"
         category = "All"
 
         # MENU VIEW
@@ -157,7 +157,7 @@ class PackageManager(object):
                 category = "All"
                 puts_err("Could not find specified category.")
 
-                view = 'category-choice-view'
+                self.view = 'category-choice-view'
 
 
         packages_query = session.query(Package).order_by(Package.pypi_downloads.desc())
@@ -185,7 +185,7 @@ class PackageManager(object):
                 quit()
 
 
-            if view == "menu-view":
+            if self.view == "menu-view":
                 # MAIN MENU
                 if ord(key) == 80:
                     # UP key
@@ -204,17 +204,17 @@ class PackageManager(object):
                 elif ord(key) == 13:
                     # ENTER key
                     index = self.menu_view['highlighted_item']
-                    view = self.menu_view['options'].values()[index]
+                    self.view = self.menu_view['options'].values()[index]
 
 
 
 
-            elif view == "virtual-env-list-view":
+            elif self.view == "virtual-env-list-view":
                 pass
 
 
 
-            elif view == 'main-view':
+            elif self.view == 'main-view':
                 if   key == 'n' or ord(key) == 77:
                     # N = Next page
                     if current_page >= paginator.num_pages:
@@ -240,16 +240,16 @@ class PackageManager(object):
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
                 elif key == 'c':
-                    view = "category-choice-view"
+                    self.view = "category-choice-view"
                     self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
 
                 elif key == 'g':
                     # UPDATE
-                    view = 'update-view'
+                    self.view = 'update-view'
                     self.update()
                     self._render_package_list(paginator, current_page, info, highlighted_item)
-                    view = 'main-view'
+                    self.view = 'main-view'
 
                 elif key == 'w':
                     # SORT BY WATCHING
@@ -265,7 +265,7 @@ class PackageManager(object):
 
                 elif ord(key) == 13:
                     # Pressed ENTER onto package
-                    view = 'package-view'
+                    self.view = 'package-view'
                     package = paginator.current_page()[highlighted_item-1]
                     self._render_package_info(package)
 
@@ -287,11 +287,11 @@ class PackageManager(object):
                         highlighted_item += 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-            elif view == 'package-view':
+            elif self.view == 'package-view':
 
                 if key == 'i':
                     #INSTALL
-                    view = "install-view"
+                    self.view = "install-view"
 
                     self._clear_screen()
 
@@ -310,11 +310,11 @@ class PackageManager(object):
                     puts(colored.magenta("Press ENTER to continue..."))
                     s = raw_input()
                     self._render_package_info(package)
-                    view = 'package-view'
+                    self.view = 'package-view'
 
                 elif key == 'u':
                     # UNINSTALL
-                    view = "install-view"
+                    self.view = "install-view"
 
                     self._clear_screen()
 
@@ -336,11 +336,11 @@ class PackageManager(object):
                     puts(colored.magenta("Press ENTER to continue..."))
                     s = raw_input()
                     self._render_package_info(package)
-                    view = 'package-view'
+                    self.view = 'package-view'
 
                 elif ord(key) == 8:
                     # BACKSPACE
-                    view = 'main-view'
+                    self.view = 'main-view'
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
                 elif key == 'p':
@@ -353,10 +353,10 @@ class PackageManager(object):
                     package = paginator.current_page()[highlighted_item-1]
                     webbrowser.open(package.repo_url)
 
-            elif view == 'installed-view':
+            elif self.view == 'installed-view':
                 pass
 
-            elif view == 'category-choice-view':
+            elif self.view == 'category-choice-view':
                 if   key == 'n' or ord(key) == 77:
                     # N = Next page
                     if category_current_page >= category_paginator.num_pages:
@@ -392,7 +392,7 @@ class PackageManager(object):
                     }
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-                    view = 'main-view'
+                    self.view = 'main-view'
 
                 elif ord(key) == 72:
                     # pressed UP
@@ -417,13 +417,13 @@ class PackageManager(object):
         pass
 
     def _render(self):
-        if view == 'menu-view':
+        if self.view == 'menu-view':
             self._render_main_menu()
 
-        elif view == 'main-view':
+        elif self.view == 'main-view':
             self._render_package_list(paginator, current_page, info, highlighted_item)
 
-        elif view == 'category-choice-view':
+        elif self.view == 'category-choice-view':
             self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
     def _render_main_menu(self):
