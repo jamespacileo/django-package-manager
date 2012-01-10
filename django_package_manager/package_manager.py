@@ -166,7 +166,7 @@ class PackageManager(object):
         if view == 'main-view':
             self._render_package_list(paginator, current_page, info, highlighted_item)
         elif view == 'category-choice-view':
-            self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+            self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
         while True:
             key = listen_for_cli_command()
@@ -201,7 +201,7 @@ class PackageManager(object):
 
                 elif key == 'c':
                     view = "category-choice-view"
-                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+                    self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
 
                 elif key == 'g':
@@ -318,7 +318,7 @@ class PackageManager(object):
                         continue
 
                     category_current_page += 1
-                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+                    self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
                 elif key == 'p':
                     # P = Previous page
@@ -327,7 +327,7 @@ class PackageManager(object):
                         continue
 
                     category_current_page -= 1
-                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+                    self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
                 elif ord(key) == 13:
                     # Pressed ENTER onto package
@@ -352,13 +352,13 @@ class PackageManager(object):
                     # pressed UP
                     if not category_highlighted_item <= 1:
                         category_highlighted_item -= 1
-                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+                    self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
                 elif ord(key) == 80:
                     # pressed DOWN
                     if not category_highlighted_item >= 10:
                         category_highlighted_item += 1
-                    self._render_category_choice_view(category_paginator, category_current_page, category_highlighted_item)
+                    self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
     def _check_installed(self):
         pip_bootstrap = PIPBootstrap()
@@ -379,11 +379,12 @@ class PackageManager(object):
 
         puts_package_list(paginator, current_page, highlighted_item)
 
-    def _render_category_choice_view(self, paginator, current_page, highlighted_item):
+    def _render_category_choice_view(self, paginator, current_page, info, highlighted_item):
         self._clear_screen()
 
         puts_header("Choose a category")
 
+        puts_key_value("Current category", colored.yellow(info['Category']))
 
         categories = paginator.page(current_page)
         starting_index = paginator.pagination*(current_page-1)
@@ -405,10 +406,9 @@ class PackageManager(object):
 
                 #title += "[%s]" %len(category.packages)
 
-                puts(columns([title, 40], [colored.yellow("[%s packages]" %len(category.packages)), 40]))
+                puts(columns([title, 40], [colored.yellow("[%s packages]" %len(category.packages)), 40]), newline=False)
 
-            with indent(indent=6):
-                puts("%s" %category.description or "")
+            #puts("%s" %category.description or "")
 
             puts()
 
@@ -416,6 +416,9 @@ class PackageManager(object):
             #    puts_key_value("Packages", "%s" %len(category.packages))
                 #puts("%s" %category.description)
 
+        puts('-'*80, newline=False)
+        puts(pagination_tpl)
+        puts('-'*80)
 
     def _render_package_info(self, package):
         # CLEAR CLI

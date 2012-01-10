@@ -95,7 +95,9 @@ def puts_header(text, color='green', minimal=True ):
     length = len(text) + 8
     color_text = getattr(colored, color)
     if minimal:
+        puts(color_text("#"*80), newline=False)
         puts(color_text(text))
+        puts(color_text("#"*80), newline=False)
         puts()
     else:
         puts("#"*length)
