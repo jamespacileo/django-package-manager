@@ -128,8 +128,20 @@ class PackageManager(object):
         q = quit
 
         """
-        view = "main-view"
+        view = "menu-view"
         category = "All"
+
+        # MENU VIEW
+        self.menu_view = {
+            'highlighted_item': 1,
+            'options': {
+                'Packages': 'main-view',
+                'Categories': 'category-choice-view',
+                'Virtual Environments': 'virtual-env-view',
+                'Help': 'help-view',
+                'About': 'about-view',
+            }
+        }
 
         session = Session()
         self.session = session
@@ -163,10 +175,8 @@ class PackageManager(object):
         current_page = 1
         highlighted_item = 1
 
-        if view == 'main-view':
-            self._render_package_list(paginator, current_page, info, highlighted_item)
-        elif view == 'category-choice-view':
-            self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
+
+
 
         while True:
             key = listen_for_cli_command()
@@ -177,7 +187,28 @@ class PackageManager(object):
 
             if view == "menu-view":
                 # MAIN MENU
-                pass
+                if ord(key) == 80:
+                    # UP key
+                    if not self.menu_view['highlighted_item'] >= len(self.menu_view['options']):
+                        self.menu_view['highlighted_item'] += 1
+
+                    self._render_main_menu()
+
+                elif ord(key) == 72:
+                    # DOWN key
+                    if not self.menu_view['highlighted_item'] <= 1:
+                        self.menu_view['highlighted_item'] -= 1
+
+                    self._render_main_menu()
+
+                elif ord(key) == 13:
+                    # ENTER key
+                    index = self.menu_view['highlighted_item']
+                    view = self.menu_view['options'].values()[index]
+
+
+
+
             elif view == "virtual-env-list-view":
                 pass
 
@@ -384,6 +415,53 @@ class PackageManager(object):
 
     def requirements(self):
         pass
+
+    def _render(self):
+        if view == 'menu-view':
+            self._render_main_menu()
+
+        elif view == 'main-view':
+            self._render_package_list(paginator, current_page, info, highlighted_item)
+
+        elif view == 'category-choice-view':
+            self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
+
+    def _render_main_menu(self):
+        self._clear_screen()
+        #puts_header("Django Package Manager")
+
+        ascii_art = """\
+ ___     _   ___         _
+|   \ _ | | | _ \__ _ __| |____ _ __ _ ___
+| |) | || | |  _/ _` / _| / / _` / _` / -_)
+|___/ \__/  |_| \__,_\__|_\_\__,_\__, \___|
+                                 |___/
+ __  __
+|  \/  |__ _ _ _  __ _ __ _ ___ _ _
+| |\/| / _` | ' \/ _` / _` / -_) '_|
+|_|  |_\__,_|_||_\__,_\__, \___|_|
+                      |___/         """
+
+        with indent(indent=4):
+            puts(colored.green(ascii_art))
+
+        puts(colored.green("="*80), newline=False)
+        puts("    Main menu")
+        puts(colored.green("="*80))
+
+
+        for index, option in enumerate(self.menu_view['options'].keys()):
+            quote = ""
+            if self.menu_view['highlighted_item'] == index+1:
+                quote = "  * "
+            with indent(indent=4, quote=quote):
+                puts(option)
+            puts()
+
+        puts(colored.green("="*80))
+
+        with indent(indent=4):
+            puts("https://github.com/jamespacileo/django-package-manager")
 
     def _render_package_list(self, paginator, current_page, info, highlighted_item):
         self._clear_screen()
