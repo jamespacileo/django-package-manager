@@ -174,7 +174,16 @@ class PackageManager(object):
             if key == 'q':
                 quit()
 
-            if view == 'main-view':
+
+            if view == "menu-view":
+                # MAIN MENU
+                pass
+            elif view == "virtual-env-list-view":
+                pass
+
+            
+
+            elif view == 'main-view':
                 if   key == 'n' or ord(key) == 77:
                     # N = Next page
                     if current_page >= paginator.num_pages:
