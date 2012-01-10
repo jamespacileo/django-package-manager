@@ -2,6 +2,9 @@ import tempfile
 import os
 from urlparse import urlparse
 
+import json
+import requests
+
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
@@ -124,6 +127,9 @@ class Package(Base):
         else:
             self.installed = False
             self.installed_version = None
+
+    def check_readthedocs(self):
+        url = "http://readthedocs.org/api/v1/version/%s/?format=json"
 
     #@property
     #def check_installed(self):

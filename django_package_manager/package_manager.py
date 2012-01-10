@@ -11,7 +11,7 @@ from django_package_manager.django_packages_api import DjangoPackagesBootstrap
 from django_package_manager.pip_bootstrap import PIPBootstrap
 from django_package_manager.models import create_tables, Category, Package, Session
 from django_package_manager.cli_utils import puts_header, puts_key_value, puts_package_list, listen_for_cli_command, Paginator
-
+from django_package_manager.readthedocs_api import ReadTheDocsBootstrap
 from sqlalchemy.sql import exists
 
 CATEGORY_FIELDS = [
@@ -229,6 +229,12 @@ class PackageManager(object):
                     package = paginator.current_page()[highlighted_item-1]
                     self._render_package_info(package)
 
+                    rtd_bootstrap = ReadTheDocsBootstrap(proxy=self.proxy)
+                    docs = rtd_bootstrap.check_if_docs_exist(package.pypi_package_name or package.repo_name)
+                    if docs:
+                        self._render_package_info(package, docs=docs)
+
+
                 elif ord(key) == 72:
                     # pressed UP
                     if not highlighted_item <= 1:
@@ -420,7 +426,7 @@ class PackageManager(object):
         puts(pagination_tpl)
         puts('-'*80)
 
-    def _render_package_info(self, package):
+    def _render_package_info(self, package, docs=None):
         # CLEAR CLI
         self._clear_screen()
 
@@ -433,6 +439,8 @@ class PackageManager(object):
         if package.installed:
             puts_key_value("Installed version", colored.yellow( package.installed_version or "N\A" ))
         puts_key_value("Categories", colored.yellow( ', '.join([category.title for category in package.categories]) ))
+        if docs:
+            puts_key_value("ReadTheDocs", colored.magenta( docs ))
         # DESCRIPTION
 
         puts('-'*80, newline=False)
@@ -451,6 +459,8 @@ class PackageManager(object):
             puts("[u] uninstall")
         puts()
         puts("[p] open pypi page")
+        if docs:
+            puts("[d] open docs page")
         puts("[r] open repository url")
         puts()
         puts("[backspace] return to previous screen")
