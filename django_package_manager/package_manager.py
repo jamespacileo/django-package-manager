@@ -175,7 +175,7 @@ class PackageManager(object):
                 quit()
 
             if view == 'main-view':
-                if   key == 'n':
+                if   key == 'n' or ord(key) == 77:
                     # N = Next page
                     if current_page >= paginator.num_pages:
                         puts_err("You are already at the last page")
@@ -184,7 +184,7 @@ class PackageManager(object):
                     current_page += 1
                     self._render_package_list(paginator, current_page, info, highlighted_item)
 
-                elif key == 'p':
+                elif key == 'p' or ord(key) == 75:
                     # P = Previous page
                     if current_page <= 1:
                         puts_err("You are already at the first page")
@@ -317,7 +317,7 @@ class PackageManager(object):
                 pass
 
             elif view == 'category-choice-view':
-                if   key == 'n':
+                if   key == 'n' or ord(key) == 77:
                     # N = Next page
                     if category_current_page >= category_paginator.num_pages:
                         puts_err("You are already at the last page")
@@ -326,7 +326,7 @@ class PackageManager(object):
                     category_current_page += 1
                     self._render_category_choice_view(category_paginator, category_current_page, info, category_highlighted_item)
 
-                elif key == 'p':
+                elif key == 'p' or ord(key) == 75:
                     # P = Previous page
                     if category_current_page <= 1:
                         puts_err("You are already at the first page")
