@@ -29,6 +29,30 @@ association_table = Table('association', Base.metadata,
     Column('package_id', Integer, ForeignKey('packages.id'))
 )
 
+class VirtualEnvironment(Base):
+
+    __tablename__ = 'virtual_environments'
+
+    id = Column(Integer, primary_key=True)
+
+    title = Column(String, db_index=True)
+    directory_path = Column(String)
+
+    @property
+    def scripts_dir(self):
+        return ''
+
+    @property
+    def bin_dir(self):
+        return ''
+
+    def check_existance(self):
+        return False
+
+    @property
+    def python_executable(self):
+        return ''
+
 class Category(Base):
     __tablename__ = 'categories'
     #objects = sessionmaker(bind=engine)

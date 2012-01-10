@@ -157,6 +157,7 @@ class PackageManager(object):
         self.category_choice_view['category_paginator'] = Paginator(objects=categories, pagination=10)
         self.category_choice_view['current_page'] = 1
         self.category_choice_view['highlighted_item'] = 1
+        self.category_choice_view['info'] = {}
 
         if category_name:
             category = self.session.query(Category).filter(Category.slug == category_name)
@@ -322,8 +323,11 @@ class PackageManager(object):
                     puts()
                     puts(colored.magenta("Press ENTER to continue..."))
                     s = raw_input()
-                    self._render_package_info(package)
+
                     self.view = 'package-view'
+                    self._render()
+                    #self._render_package_info(package)
+
 
                 elif key == 'u':
                     # UNINSTALL
@@ -348,8 +352,9 @@ class PackageManager(object):
                     puts()
                     puts(colored.magenta("Press ENTER to continue..."))
                     s = raw_input()
-                    self._render_package_info(package)
+
                     self.view = 'package-view'
+                    self._render_package_info(package)
 
                 elif ord(key) == 8:
                     # BACKSPACE
@@ -377,7 +382,8 @@ class PackageManager(object):
                         continue
 
                     self.category_choice_view['current_page'] += 1
-                    self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
+                    self._render()
+                    #self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
 
                 elif key == 'p' or ord(key) == 75:
                     # P = Previous page
@@ -386,7 +392,8 @@ class PackageManager(object):
                         continue
 
                     self.category_choice_view['current_page'] -= 1
-                    self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
+                    self._render()
+                    #self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
 
                 elif ord(key) == 13:
                     # Pressed ENTER onto package
@@ -403,21 +410,30 @@ class PackageManager(object):
                         'Category': category and category.title or 'All',
                         'Package count': len(category.packages),
                     }
-                    self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
 
                     self.view = 'main-view'
+                    self._render()
+                    #self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
+
 
                 elif ord(key) == 72:
                     # pressed UP
                     if not self.category_choice_view['highlighted_item'] <= 1:
                         self.category_choice_view['highlighted_item'] -= 1
-                    self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
+                    self._render()
+                    #self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
 
                 elif ord(key) == 80:
                     # pressed DOWN
                     if not self.category_choice_view['highlighted_item'] >= 10:
                         self.category_choice_view['highlighted_item'] += 1
-                    self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
+                    self._render()
+                    #self._render_category_choice_view(self.category_choice_view['category_paginator'], self.category_choice_view['current_page'], self.main_view['info'], self.category_choice_view['highlighted_item'])
+
+                elif ord(key) == 8:
+                    # BACKSPACE key
+                    self.view = 'menu-view'
+                    self._render()
 
     def _check_installed(self):
         pip_bootstrap = PIPBootstrap()
@@ -443,7 +459,7 @@ class PackageManager(object):
 
         elif self.view == 'category-choice-view':
             paginator = self.category_choice_view['paginator']
-            info = self.category_choice_view['info']
+            info = self.main_view['info']
             current_page = self.category_choice_view['current_page']
             highlighted_item = self.category_choice_view['highlighted_item']
 
