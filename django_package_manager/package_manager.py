@@ -181,7 +181,7 @@ class PackageManager(object):
             elif view == "virtual-env-list-view":
                 pass
 
-            
+
 
             elif view == 'main-view':
                 if   key == 'n' or ord(key) == 77:
