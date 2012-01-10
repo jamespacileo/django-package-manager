@@ -95,9 +95,9 @@ def puts_header(text, color='green', minimal=True ):
     length = len(text) + 8
     color_text = getattr(colored, color)
     if minimal:
-        puts(color_text("#"*80), newline=False)
+        puts(colored.green("="*80), newline=False)
         puts(color_text(text))
-        puts(color_text("#"*80), newline=False)
+        puts(colored.green("="*80), newline=False)
         puts()
     else:
         puts("#"*length)
@@ -122,9 +122,9 @@ def puts_package_list(paginator, current_page, highlighted_item):
 
     pagination_tpl = "Page %s of %s" %(current_page, paginator.num_pages)
 
-    puts('-'*80, newline=False)
+    puts(colored.green('='*80), newline=False)
     puts(pagination_tpl)
-    puts('-'*80)
+    puts(colored.green('='*80))
 
     for index, package in enumerate(packages):
         #if package.check_installed:
@@ -169,6 +169,6 @@ def puts_package_list(paginator, current_page, highlighted_item):
         puts()
 
 
-    puts('-'*80, newline=False)
+    puts(colored.green('='*80), newline=False)
     puts(pagination_tpl)
-    puts('-'*80)
+    puts(colored.green('='*80))
