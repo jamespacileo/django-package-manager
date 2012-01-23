@@ -20,3 +20,9 @@ Description
 Introduction
 ======================
 
+Use Cases
+======================
+
+- Keep track of installed libraries and update them to latest MINOR or MAJOR stable version.
+- Quickly browse useful sets of Django libraries and install them from the fly. Install is available using any PYPI version and repository.
+- Manage Virtual Environments, build structured requirements.txt files on the fly.
