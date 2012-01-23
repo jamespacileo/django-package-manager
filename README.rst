@@ -20,7 +20,7 @@ Description
 Introduction
 ======================
 
-.. image:: https://github.com/jamespacileo/django-package-manager/blob/master/assets/DJPM.PNG
+.. image:: https://github.com/jamespacileo/django-package-manager/raw/master/assets/DJPM.PNG
 
 Use Cases
 ======================
