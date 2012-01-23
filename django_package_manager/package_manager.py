@@ -1,6 +1,7 @@
+from distutils.version import LooseVersion
 import os
 import webbrowser
-from clint.textui import colored
+from clint.textui import colored, progress
 from clint.textui.cols import columns
 from clint.textui.core import puts, puts_err, indent
 import time
@@ -13,6 +14,10 @@ from django_package_manager.models import create_tables, Category, Package, Sess
 from django_package_manager.cli_utils import puts_header, puts_key_value, puts_package_list, listen_for_cli_command, Paginator
 from django_package_manager.readthedocs_api import ReadTheDocsBootstrap
 from sqlalchemy.sql import exists
+
+from distutils.version import LooseVersion as versioner
+
+PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 CATEGORY_FIELDS = [
                   'id',
@@ -64,7 +69,12 @@ class PackageManager(object):
 
         puts_header("Updating categories...")
         categories = dp_bootstrap.grid_list()
-        for category in categories:
+        puts("Category list downloaded 1/1 OK")
+        #progress_bar = progress.bar(len(categories))
+        for category in progress.bar(categories):
+
+            #progress_bar.next()
+
             filtered_args = [(key,val) for key,val in category.items() if key in CATEGORY_FIELDS]
             category_model = session.query(Category).filter(Category.slug==category['slug']).first()
             if category_model:
@@ -76,9 +86,12 @@ class PackageManager(object):
         session.commit()
         print "Categories updated"
 
+        puts()
+
         puts_header("Updating packages...")
         packages = dp_bootstrap.app_list()
-        for package in packages:
+        puts("Package list downloaded 1/1 OK")
+        for package in progress.bar(packages):
             filtered_args = [(key,val) for key,val in package.items() if key in PACKAGE_FIELDS]
             package_model = session.query(Package).filter(Package.slug==package['slug']).first()
             #print "PACKAGE_MODEL", package_model
@@ -88,6 +101,8 @@ class PackageManager(object):
             else:
                 package_model = Package(**dict(filtered_args))
                 session.add(package_model)
+
+            package_model.set_package_name()
 
             package_model.categories = []
             if package['grids']:
@@ -99,6 +114,8 @@ class PackageManager(object):
 
         session.commit()
         print "Packages updated"
+
+        self._check_installed_packages()
 
 
     def search(self, text):
@@ -139,6 +156,7 @@ class PackageManager(object):
                 'Categories': 'category-choice-view',
                 'Virtual Environments': 'virtual-env-view',
                 'Help': 'help-view',
+                'Update': 'update-view',
                 'About': 'about-view',
             }
         }
@@ -152,6 +170,7 @@ class PackageManager(object):
             'paginator' : Paginator(objects=categories, pagination=10),
             'current_page' : 1,
             'highlighted_item' : 1,
+            'ordering': 'name',
         }
 
         self.category_choice_view['category_paginator'] = Paginator(objects=categories, pagination=10)
@@ -174,7 +193,6 @@ class PackageManager(object):
         puts("")
 
 
-
         self.main_view = {}
         self.main_view['paginator'] = Paginator(packages, pagination=10)
         self.main_view['paginator'].base_query = self.session.query(Package)
@@ -184,6 +202,7 @@ class PackageManager(object):
             'Category': category_name or 'All',
             'Package count': self.session.query(Package).count(),
             }
+        self.main_view['ordering'] = 'downloads'
 
         self._render()
 
@@ -244,6 +263,7 @@ class PackageManager(object):
 
                 elif key == 'u':
                     # SORT BY USING
+                    self.main_view['ordering'] = 'people using library'
                     self.main_view['paginator'].objects = self.main_view['paginator'].base_query.order_by(Package.usage_count.desc()).all()
                     self.main_view['current_page'] = 1
                     self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
@@ -262,12 +282,14 @@ class PackageManager(object):
 
                 elif key == 'w':
                     # SORT BY WATCHING
+                    self.main_view['ordering'] = 'people wathcing repository'
                     self.main_view['paginator'].objects = self.main_view['paginator'].base_query.order_by(Package.repo_watchers.desc()).all()
                     self.main_view['current_page'] = 1
                     self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
 
                 elif key == 'd':
                     # SORT by Downloads
+                    self.main_view['ordering'] = 'PYPI downloads'
                     self.main_view['paginator'].objects = self.main_view['paginator'].base_query.order_by(Package.pypi_downloads.desc()).all()
                     self.main_view['current_page'] = 1
                     self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
@@ -435,6 +457,21 @@ class PackageManager(object):
                     self.view = 'menu-view'
                     self._render()
 
+                elif key == 'k':
+                    # ORDERING by Package count
+                    self.category_choice_view['ordering'] = 'package count'
+                    #self.category_choice_view['paginator'] = self.category_choice_view['paginator'].base_query.order_by(Category.package.desc()).all()
+
+                    self.main_view['paginator'].objects = self.main_view['paginator'].base_query.order_by(Package.usage_count.desc()).all()
+                    self.main_view['current_page'] = 1
+                    self._render_package_list(self.main_view['paginator'], self.main_view['current_page'], self.main_view['info'], self.main_view['highlighted_item'])
+
+            elif self.view in ['about-view', 'help-view']:
+
+                if ord(key) == 8:
+                    self.view = "menu-view"
+                    self._render()
+
     def _check_installed(self):
         pip_bootstrap = PIPBootstrap()
         installed_packages = pip_bootstrap.installed_packages()
@@ -446,6 +483,7 @@ class PackageManager(object):
         pass
 
     def _render(self):
+        self._clear_screen()
         if self.view == 'menu-view':
             self._render_main_menu()
 
@@ -464,6 +502,35 @@ class PackageManager(object):
             highlighted_item = self.category_choice_view['highlighted_item']
 
             self._render_category_choice_view(paginator, current_page, info, highlighted_item)
+
+        elif self.view == 'update-view':
+            self.update()
+            self.view = 'menu-view'
+            self._render()
+
+        elif self.view == 'package-view':
+            package = self.main_view['paginator'].current_page()[self.main_view['highlighted_item']-1]
+            self._render_package_info(package)
+
+            rtd_bootstrap = ReadTheDocsBootstrap(proxy=self.proxy)
+            docs = rtd_bootstrap.check_if_docs_exist(package.pypi_package_name or package.repo_name)
+            if docs:
+                self._render_package_info(package, docs=docs)
+
+        elif self.view == 'about-view':
+
+            file = open(os.path.join(PROJECT_DIR, 'templates', 'ABOUT.txt'))
+            puts(file.read())
+            file.close()
+
+        elif self.view == 'help-view':
+
+            file = open(os.path.join(PROJECT_DIR, 'templates', 'HELP.txt'))
+            puts(file.read())
+            file.close()
+
+
+
 
     def _render_main_menu(self):
         self._clear_screen()
@@ -512,7 +579,64 @@ class PackageManager(object):
             else:
                 puts_key_value(key, str(val))
 
-        puts_package_list(paginator, current_page, highlighted_item)
+        puts(colored.green("-"*80))
+
+        #puts_key_value("Main categories", "[A]ll, [I]nstalled")
+        puts_key_value("Order by","Na[m]e, [I]nstalled, [U]sage, [W]atchers")
+
+
+        packages = paginator.page(current_page)
+        starting_index = paginator.pagination*(current_page-1)
+
+        pagination_tpl = "Page " + colored.yellow("%s" %current_page) + " of %s" %paginator.num_pages
+
+        if self.main_view.get('ordering'):
+            pagination_tpl += " - Ordering by: " + colored.yellow(self.main_view.get('ordering'))
+
+        puts(colored.green('-'*80), newline=False)
+        puts(pagination_tpl)
+        puts(colored.green('-'*80))
+
+        for index, package in enumerate(packages):
+
+            with indent(indent=6, quote="%s)" %str(starting_index+index+1)):
+                title = colored.green(package.title)
+
+                if index+1 == highlighted_item:
+                    title = " * " + title
+
+
+                if package.installed:
+                    if not package.installed_version:
+                        # There is no package version! We can't deduce if a new version is really available.
+                        title += colored.yellow(" [Installed] ")
+                    else:
+                        # Package version is there. Everything normal and good!
+                        title += colored.yellow(" [Installed %s] " %package.installed_version)
+                        if versioner(package.installed_version) < versioner(package.pypi_version):
+                            title += colored.red(" [New version %s] " %package.pypi_version)
+                puts(title)
+
+            info = {
+                "downloads": package.pypi_downloads,
+                #"forks": package.repo_forks,
+                "watching": package.repo_watchers,
+                "using": package.usage_count,
+                }
+            cols = [[colored.white("%s %s" %(value, key)), 20] for key,value in info.items()]
+
+            with indent(indent=6):
+                #puts()
+                puts(columns(*cols))
+
+            puts()
+
+
+        puts(colored.green('-'*80), newline=False)
+        puts(pagination_tpl)
+        puts(colored.green('-'*80))
+
+        #puts_package_list(paginator, current_page, highlighted_item)
 
     def _render_category_choice_view(self, paginator, current_page, info, highlighted_item):
         self._clear_screen()
@@ -521,14 +645,20 @@ class PackageManager(object):
 
         puts_key_value("Current category", colored.yellow(info['Category']))
 
+        puts(colored.green("-"*80))
+
+        puts_key_value("Main categories", "[A]ll, [I]nstalled")
+        puts_key_value("Order by","Na[m]e, Pac[K]ages")
+
+
         categories = paginator.page(current_page)
         starting_index = paginator.pagination*(current_page-1)
 
         pagination_tpl = "Page %s of %s" %(current_page, paginator.num_pages)
 
-        puts('-'*80, newline=False)
+        puts(colored.green("-"*80), newline=False)
         puts(pagination_tpl)
-        puts('-'*80)
+        puts(colored.green("-"*80))
 
         for index, category in enumerate(categories):
 
@@ -551,9 +681,9 @@ class PackageManager(object):
             #    puts_key_value("Packages", "%s" %len(category.packages))
                 #puts("%s" %category.description)
 
-        puts('-'*80, newline=False)
+        puts(colored.green("-"*80), newline=False)
         puts(pagination_tpl)
-        puts('-'*80)
+        puts(colored.green("-"*80))
 
     def _render_package_info(self, package, docs=None):
         # CLEAR CLI
@@ -606,8 +736,18 @@ class PackageManager(object):
     def _check_installed_packages(self):
         pip_bootstrap = PIPBootstrap()
         installed_packages = pip_bootstrap.installed_packages()
-        for installed_package in installed_packages:
+
+        puts("Checking installed packages")
+
+        for installed_package in progress.bar(installed_packages):
             name = installed_package.project_name
+
+            package = self.session.query(Package).filter(Package.package_name==name).first()
+            if package:
+                package.installed = True
+                package.installed_version = installed_package._version
+
+            self.session.commit()
 
 
     def update_database(self):

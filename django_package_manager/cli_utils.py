@@ -61,7 +61,7 @@ class Paginator(object):
 
     @property
     def num_pages(self):
-        return (len(self.objects)+self.pagination) / self.pagination
+        return (len(self.objects)+self.pagination-1) / self.pagination
 
     def page(self, num=1):
         if num < 1 or num > self.num_pages:

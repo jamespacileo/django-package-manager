@@ -13,8 +13,8 @@ class PIPBootstrap(object):
     """
     def __init__(self, proxy=""):
         self.proxy = proxy
-        self.pip_folder = os.path.abspath(os.path.dirname(pip_main))
-        self.pip_bin = os.path.join(self.pip_folder, '__init__.py')
+        #self.pip_folder = os.path.abspath(os.path.dirname(pip_main))
+        #self.pip_bin = os.path.join(self.pip_folder, '__init__.py')
 
     def build_args(self, command, *args):
         pip_args = []

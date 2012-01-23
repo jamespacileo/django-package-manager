@@ -11,6 +11,10 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.schema import Table
 
+if __name__ == '__main__':
+    import sys
+    sys.path.insert(0, os.path.abspath('..'))
+
 from django_package_manager.pip_bootstrap import PIPBootstrap
 
 DJPM_LOCAL_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -35,8 +39,8 @@ class VirtualEnvironment(Base):
 
     id = Column(Integer, primary_key=True)
 
-    title = Column(String, db_index=True)
-    directory_path = Column(String)
+    title = Column(String, index=True)
+    directory_path = Column(String, unique=True)
 
     @property
     def scripts_dir(self):
@@ -82,6 +86,8 @@ class Package(Base):
     slug = Column(String, index=True, unique=True)
     description = Column(Text)
 
+    package_name = Column(String)
+
     absolute_url = Column(String)
     resource_uri = Column(String, index=True, unique=True)
     usage_count = Column(Integer, index=True)
@@ -100,6 +106,11 @@ class Package(Base):
     installed_version = Column(String)
 
     installed_info = False
+
+    def set_package_name(self):
+        if self.pypi_package_name:
+            self.package_name = self.pypi_package_name
+        self.package_name = self.repo_name
 
     @property
     def pypi_package_name(self):
@@ -172,3 +183,15 @@ class Package(Base):
 
 def create_tables():
     Base.metadata.create_all(engine)
+
+if __name__ == '__main__':
+    from sqlalchemy.sql import select
+
+    conn = engine.connect()
+    packages = Package.__table__
+
+    query = select([packages.c.package_name], packages.c.installed==True)
+    for result in conn.execute(query):
+        print result
+
+
