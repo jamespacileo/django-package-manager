@@ -20,6 +20,8 @@ Description
 Introduction
 ======================
 
+.. image:: https://github.com/kennethreitz/clint/raw/master/assets/DJPM.png
+
 Use Cases
 ======================
 
