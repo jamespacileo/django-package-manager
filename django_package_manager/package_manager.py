@@ -476,9 +476,6 @@ class PackageManager(object):
         pip_bootstrap = PIPBootstrap()
         installed_packages = pip_bootstrap.installed_packages()
 
-        for installed_package in installed_packages:
-            pass
-
     def requirements(self):
         pass
 
@@ -513,21 +510,19 @@ class PackageManager(object):
             self._render_package_info(package)
 
             rtd_bootstrap = ReadTheDocsBootstrap(proxy=self.proxy)
-            docs = rtd_bootstrap.check_if_docs_exist(package.pypi_package_name or package.repo_name)
-            if docs:
+            if docs := rtd_bootstrap.check_if_docs_exist(
+                package.pypi_package_name or package.repo_name
+            ):
                 self._render_package_info(package, docs=docs)
 
         elif self.view == 'about-view':
 
-            file = open(os.path.join(PROJECT_DIR, 'templates', 'ABOUT.txt'))
-            puts(file.read())
-            file.close()
-
+            with open(os.path.join(PROJECT_DIR, 'templates', 'ABOUT.txt')) as file:
+                puts(file.read())
         elif self.view == 'help-view':
 
-            file = open(os.path.join(PROJECT_DIR, 'templates', 'HELP.txt'))
-            puts(file.read())
-            file.close()
+            with open(os.path.join(PROJECT_DIR, 'templates', 'HELP.txt')) as file:
+                puts(file.read())
 
 
 
@@ -557,9 +552,7 @@ class PackageManager(object):
 
 
         for index, option in enumerate(self.menu_view['options'].keys()):
-            quote = ""
-            if self.menu_view['highlighted_item'] == index+1:
-                quote = "  * "
+            quote = "  * " if self.menu_view['highlighted_item'] == index+1 else ""
             with indent(indent=4, quote=quote):
                 puts(option)
             puts()
@@ -603,7 +596,7 @@ class PackageManager(object):
                 title = colored.green(package.title)
 
                 if index+1 == highlighted_item:
-                    title = " * " + title
+                    title = f' * {title}'
 
 
                 if package.installed:
@@ -742,8 +735,11 @@ class PackageManager(object):
         for installed_package in progress.bar(installed_packages):
             name = installed_package.project_name
 
-            package = self.session.query(Package).filter(Package.package_name==name).first()
-            if package:
+            if (
+                package := self.session.query(Package)
+                .filter(Package.package_name == name)
+                .first()
+            ):
                 package.installed = True
                 package.installed_version = installed_package._version
 

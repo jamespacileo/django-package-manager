@@ -98,15 +98,15 @@ def puts_header(text, color='green', minimal=True ):
         puts(colored.green("="*80), newline=False)
         puts(color_text(text))
         puts(colored.green("="*80), newline=False)
-        puts()
     else:
         puts("#"*length)
         puts("### "+ color_text(text)+ " ###")
         puts("#"*length)
-        puts()
+
+    puts()
 
 def puts_key_value(key, value):
-    key_column = [key+':', 20]
+    key_column = [f'{key}:', 20]
     value_column = [value, 80]
     puts(columns(key_column, value_column) )
 
@@ -140,7 +140,7 @@ def puts_package_list(paginator, current_page, highlighted_item):
             title = colored.green(package.title)
 
             if index+1 == highlighted_item:
-                title = " * " + title
+                title = f' * {title}'
 
 
             if package.installed:

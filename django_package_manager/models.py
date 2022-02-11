@@ -117,7 +117,7 @@ class Package(Base):
         if not self.pypi_url:
             return ''
         parsed_url = urlparse(self.pypi_url)
-        if not parsed_url.hostname == "pypi.python.org":
+        if parsed_url.hostname != "pypi.python.org":
             return ''
         if not parsed_url.path.startswith("/pypi/"):
             return ''
