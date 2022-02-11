@@ -22,11 +22,7 @@ if __name__=="__main__":
 
     grouped_args = dict(args.grouped)
 
-    proxy = None
-    if grouped_args.has_key('--proxy'):
-        proxy = grouped_args['--proxy'][0]
-
-
+    proxy = grouped_args['--proxy'][0] if grouped_args.has_key('--proxy') else None
     pm = PackageManager(proxy=proxy)
 
     if grouped_args['_'][0] == 'update':

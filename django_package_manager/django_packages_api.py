@@ -7,12 +7,9 @@ class DjangoPackagesBootstrap(object):
 
     def __init__(self, caching=False, proxy=None):
         self.caching = caching
-        if proxy:
-            self.proxy = {
+        self.proxy = {
                 'http': proxy,
-            }
-        else:
-            self.proxy = {}
+            } if proxy else {}
 
     def grid_list(self):
         url = "http://djangopackages.com/api/v1/grid/?limit=0"
@@ -23,8 +20,7 @@ class DjangoPackagesBootstrap(object):
     def grid(self, name):
         url = "http://djangopackages.com/api/v1/package/%s/" %name
         r = requests.get(url, proxies=self.proxy)
-        jdata = json.loads(r.content)
-        return jdata
+        return json.loads(r.content)
 
     def app_list(self, category=None):
         if not category:
@@ -38,6 +34,5 @@ class DjangoPackagesBootstrap(object):
     def app(self, name):
         url = "http://djangopackages.com/api/v1/package/%s/" %name
         r = requests.get(url, proxies=self.proxy)
-        jdata = json.loads(r.content)
-        return jdata
+        return json.loads(r.content)
 
